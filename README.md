@@ -42,6 +42,8 @@ the full system produces.
 
 ## Preview
 
+![Internal pipeline diagram](assets/diagrams/poc_pipeline_diagram.png)
+
 ![Simulated results screenshot](screenshots/02_simulated_results.png)
 
 ## Running the demo
