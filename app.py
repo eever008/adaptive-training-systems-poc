@@ -22,6 +22,7 @@ import random
 from datetime import datetime
 from pathlib import Path
 
+import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -192,6 +193,43 @@ def generate_recommendation(hrv: dict, affect: dict, self_report: dict, readines
     return action, rationale, confidence, factors
 
 
+def static_bar_chart(df: pd.DataFrame):
+    """Non-interactive bar chart (no scroll-to-zoom/pan) built directly on Altair.
+
+    st.bar_chart enables Vega-Lite's default pan/zoom interactions, which
+    hijacks the mouse wheel when hovering over the chart. Building the chart
+    manually without calling .interactive() avoids that.
+    """
+    data = df.reset_index()
+    category_col, value_col = data.columns[0], data.columns[1]
+    chart = (
+        alt.Chart(data)
+        .mark_bar()
+        .encode(
+            x=alt.X(f"{category_col}:N", sort=None, title=None),
+            y=alt.Y(f"{value_col}:Q"),
+            tooltip=[category_col, value_col],
+        )
+    )
+    st.altair_chart(chart, use_container_width=True)
+
+
+def static_line_chart(df: pd.DataFrame):
+    """Non-interactive line chart (no scroll-to-zoom/pan); see static_bar_chart."""
+    data = df.reset_index()
+    x_col, y_col = data.columns[0], data.columns[1]
+    chart = (
+        alt.Chart(data)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X(f"{x_col}:O"),
+            y=alt.Y(f"{y_col}:Q"),
+            tooltip=[x_col, y_col],
+        )
+    )
+    st.altair_chart(chart, use_container_width=True)
+
+
 def run_simulation():
     hrv = simulate_hrv()
     affect = simulate_affect()
@@ -269,11 +307,11 @@ else:
 
     st.markdown("**Simulated Emotion Label Distribution**")
     dist_df = pd.DataFrame.from_dict(latest["affect"]["distribution"], orient="index", columns=["% of frames"])
-    st.bar_chart(dist_df)
+    static_bar_chart(dist_df)
 
     st.markdown("**Simulated Self-Report Profile**")
     sr_df = pd.DataFrame.from_dict(latest["self_report"], orient="index", columns=["Rating (1-10)"])
-    st.bar_chart(sr_df)
+    static_bar_chart(sr_df)
 
     st.subheader("Composite Readiness Score")
     st.progress(int(latest["readiness"]))
@@ -294,7 +332,7 @@ else:
                 "Readiness": [h["readiness"] for h in st.session_state.history],
             }
         ).set_index("Session")
-        st.line_chart(hist_df)
+        static_line_chart(hist_df)
 
 st.divider()
 st.caption(
