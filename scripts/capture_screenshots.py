@@ -22,6 +22,13 @@ async def main():
         await button.click()
         await page.wait_for_timeout(1500)
 
+        expander = page.get_by_text("Contributing factors considered by the rule engine")
+        try:
+            await expander.click()
+            await page.wait_for_timeout(400)
+        except Exception:
+            pass
+
         async def resize_to_content():
             await page.set_viewport_size({"width": 1400, "height": 3200})
             await page.wait_for_timeout(600)
