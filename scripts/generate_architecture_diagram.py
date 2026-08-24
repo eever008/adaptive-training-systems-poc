@@ -82,19 +82,31 @@ def main():
     for text, x0, x1 in gens:
         draw_box(draw, (x0, gen_y0, x1, gen_y1), text, small_font)
 
-    h_arrow(draw, b1[2], 270, 200)
-
-    # connect midpoint of stage1 box to each generator box top via elbowed lines
-    mid_y = 200
+    # Route the connector from stage 1 to the four generator boxes via a bus
+    # line ABOVE the boxes (bus_y < gen_y0), so it never crosses box interiors.
+    riser_x = 250
+    bus_y = 65
+    b1_cx_y = (b1[1] + b1[3]) // 2  # 200
+    draw.line([(b1[2], b1_cx_y), (riser_x, b1_cx_y)], fill=ARROW_COLOR, width=2)
+    draw.line([(riser_x, b1_cx_y), (riser_x, bus_y)], fill=ARROW_COLOR, width=2)
+    last_cx = max((x0 + x1) // 2 for _, x0, x1 in gens)
+    draw.line([(riser_x, bus_y), (last_cx, bus_y)], fill=ARROW_COLOR, width=2)
     for text, x0, x1 in gens:
         cx = (x0 + x1) // 2
-        draw.line([(270, mid_y), (cx, mid_y)], fill=ARROW_COLOR, width=2)
-        v_arrow(draw, cx, mid_y, gen_y0)
+        v_arrow(draw, cx, bus_y, gen_y0)
 
-    # Stage 3: composite readiness score
+    # Stage 3: composite readiness score. Only HRV, affect, and self-report
+    # feed the readiness score (the photo is illustrative only and is not
+    # used in any computation); converge those three via a bus placed just
+    # below the generator boxes so lines never cross box interiors.
     b3 = (480, 380, 860, 460)
-    v_arrow(draw, 570, gen_y1, b3[1])
-    v_arrow(draw, 770, gen_y1, b3[1])
+    b3_cx = (b3[0] + b3[2]) // 2
+    converge_y = 345
+    scoring_cxs = [(x0 + x1) // 2 for _, x0, x1 in gens[:3]]
+    for cx in scoring_cxs:
+        draw.line([(cx, gen_y1), (cx, converge_y)], fill=ARROW_COLOR, width=2)
+    draw.line([(min(scoring_cxs), converge_y), (max(scoring_cxs), converge_y)], fill=ARROW_COLOR, width=2)
+    v_arrow(draw, b3_cx, converge_y, b3[1])
     draw_box(draw, b3, "Composite Readiness Score\n(weighted combination, 0\u2013100)", box_font)
 
     # Stage 4: rule-based recommendation engine
@@ -111,6 +123,13 @@ def main():
         "Display Output:\nProfile + Readiness Score +\nRecommendation + Confidence +\nContributing Factors",
         box_font,
     )
+
+    # Stock photo bypasses scoring/recommendation entirely and routes
+    # straight to the display stage, since it is illustrative only.
+    photo_cx = (gens[3][1] + gens[3][2]) // 2
+    b5_cy = (b5[1] + b5[3]) // 2
+    draw.line([(photo_cx, gen_y1), (photo_cx, b5_cy)], fill=ARROW_COLOR, width=2)
+    h_arrow(draw, photo_cx, b5[0] - 10, b5_cy)
 
     # Note box
     note_font = get_font(13)
